@@ -10,8 +10,7 @@ class MsJobScraper
   def scrape
     @nokogirified_job_posting = visit_job_posting
     actual_opennings = 0
-    while nokogirified_job_posting.url ||
-      visit_job_posting(current_url_jid + 3).url || visit_job_posting(current_url_jid + 7).url || visit_job_posting(current_url_jid + 11).url
+    while there_are_still_more_jobs
       if job_title != "This Job is no longer available." && nokogirified_job_posting.url
         actual_opennings += 1 #extraneous
         puts job_title #extraneous
@@ -25,6 +24,13 @@ class MsJobScraper
   end
 
   private
+
+  def there_are_still_more_jobs
+    nokogirified_job_posting.url ||
+      visit_job_posting(current_url_jid + 3).url ||
+        visit_job_posting(current_url_jid + 7).url || 
+          visit_job_posting(current_url_jid + 11).url
+  end
 
   def visit_job_posting(jid = nil)
     Nokogiri::HTML( open( job_url( jid || current_url_jid ) ) )
