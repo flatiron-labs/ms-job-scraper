@@ -5,27 +5,29 @@ class MsJobScraper
   def initialize(beggining_url_jid)
     @current_url_jid = beggining_url_jid
     # @csv_file = CSV.new
-    scrape
   end
-
-  private
 
   def scrape
     @nokogirified_job_posting = visit_job_posting
     actual_opennings = 0
-    while nokogirified_job_posting.url != nil
-      if job_title != "This Job is no longer available."
-        actual_opennings += 1
+    while nokogirified_job_posting.url ||
+      visit_job_posting(current_url_jid + 3).url || visit_job_posting(current_url_jid + 7).url || visit_job_posting(current_url_jid + 11).url
+      if job_title != "This Job is no longer available." && nokogirified_job_posting.url
+        actual_opennings += 1 #extraneous
+        puts job_title #extraneous
+        puts current_url_jid #extraneous
+        puts nokogirified_job_posting.css("table#JobDetails_contentRight").children.count
       end
-      puts job_title
       @current_url_jid += 1
       @nokogirified_job_posting = visit_job_posting
     end
-    puts "Total Openings: #{actual_opennings}" 
+    puts "Total Openings: #{actual_opennings}" #extraneous
   end
 
-  def visit_job_posting
-    Nokogiri::HTML( open( job_url( current_url_jid ) ) )
+  private
+
+  def visit_job_posting(jid = nil)
+    Nokogiri::HTML( open( job_url( jid || current_url_jid ) ) )
   end
 
   def job_url(job_url_jid)
