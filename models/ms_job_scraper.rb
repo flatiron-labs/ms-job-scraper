@@ -4,14 +4,14 @@ class MsJobScraper
 
   def initialize(beggining_url_jid)
     @current_url_jid = beggining_url_jid
-    # @csv_file = CSV.new
+    create_new_csv
   end
 
   def scrape
     @nokogirified_job_posting = visit_job_posting
     actual_opennings = 0
     while more_jobs?
-      if job_title != "This Job is no longer available." && nokogirified_job_posting.url
+      if job_we_want?
         job_info_arr = [
           job_title,
           job_category,
@@ -20,15 +20,15 @@ class MsJobScraper
           job_location[0],
           job_location[1],
           job_location[2],
+          job_description,
           job_url(current_url_jid),
           job_id
         ]
-        binding.pry
+        csv_file << job_info_arr 
         actual_opennings += 1 #extraneous
         puts job_title #extraneous
-        puts current_url_jid #extraneous
-        puts nokogirified_job_posting.css("table#JobDetails_contentRight").children.count #extraneous
       end
+      puts current_url_jid #extraneous
       @current_url_jid += 1
       @nokogirified_job_posting = visit_job_posting
     end
@@ -37,11 +37,25 @@ class MsJobScraper
 
   private
 
+  def create_new_csv
+    @csv_file = CSV.open("ms-job-listings#{DateTime.new}.csv", "wb")
+    @csv_file << ["Title", "Category", "Division", "Product", "Country", "State", "City", "Description", "URL", "Job ID"]
+  end
+
   def more_jobs?
     nokogirified_job_posting.url ||
-      visit_job_posting(current_url_jid + 3).url ||
-        visit_job_posting(current_url_jid + 7).url || 
-          visit_job_posting(current_url_jid + 11).url
+      visit_job_posting(current_url_jid + 1).url ||
+        visit_job_posting(current_url_jid + 3).url ||
+          visit_job_posting(current_url_jid + 7).url || 
+            visit_job_posting(current_url_jid + 11).url ||
+              visit_job_posting(current_url_jid + 13).url
+  end
+
+  def job_we_want?
+    job_title != "This Job is no longer available." && 
+      nokogirified_job_posting.url && 
+        job_location.include?("United States") &&
+          job_category.include?("Software")
   end
 
   def visit_job_posting(jid = nil)
@@ -84,6 +98,10 @@ class MsJobScraper
 
   def job_division
     nokogiri_job_detail_text_selector('JobDivision')
+  end
+
+  def job_description
+    nokogirified_job_posting.css("div.jobDetails_jobDesc").text.scan(/qualification.+/i).first
   end
 
 
